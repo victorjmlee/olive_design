@@ -109,7 +109,7 @@ Keep it under 300 words. Include specific materials, colors, lighting, and camer
       prompt: dallePrompt,
       n: 1,
       size: "1024x1024",
-      quality: "hd",
+      quality: "standard",
       response_format: "b64_json",
     });
 
