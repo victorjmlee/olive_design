@@ -8,8 +8,8 @@ import urllib.parse
 import json
 
 # 여기에 ID, Secret 넣으면 됨 (git에 올릴 땐 비우고 환경변수 사용 권장)
-CLIENT_ID = os.environ.get("NAVER_CLIENT_ID", "n_bj2sP6R7Zm8S8Y13XO")
-CLIENT_SECRET = os.environ.get("NAVER_CLIENT_SECRET", "ix3uCpEXrMC")
+CLIENT_ID = os.environ.get("NAVER_CLIENT_ID", "")
+CLIENT_SECRET = os.environ.get("NAVER_CLIENT_SECRET", "")
 
 if not CLIENT_ID or not CLIENT_SECRET:
     print("test.py 상단의 CLIENT_ID, CLIENT_SECRET을 수정하거나,")
