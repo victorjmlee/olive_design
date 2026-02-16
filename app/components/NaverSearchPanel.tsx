@@ -39,6 +39,7 @@ export default function NaverSearchPanel({
   const [error, setError] = useState("");
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [quantities, setQuantities] = useState<Record<number, number>>({});
+  const [addedIndices, setAddedIndices] = useState<Set<number>>(new Set());
 
   const doSearch = useCallback(
     async (q: string, s: string, p: number) => {
@@ -90,6 +91,14 @@ export default function NaverSearchPanel({
       price,
       qty,
     });
+    setAddedIndices((prev) => new Set(prev).add(index));
+    setTimeout(() => {
+      setAddedIndices((prev) => {
+        const next = new Set(prev);
+        next.delete(index);
+        return next;
+      });
+    }, 1000);
   };
 
   return (
@@ -221,9 +230,14 @@ export default function NaverSearchPanel({
                         />
                         <button
                           onClick={() => addItem(item, i)}
-                          className="px-3 py-1 bg-[var(--naver-green)] text-white text-xs rounded hover:bg-[var(--naver-green-dark)] transition-colors"
+                          disabled={addedIndices.has(i)}
+                          className={`px-3 py-1 text-white text-xs rounded transition-colors ${
+                            addedIndices.has(i)
+                              ? "bg-emerald-500 cursor-default"
+                              : "bg-[var(--naver-green)] hover:bg-[var(--naver-green-dark)]"
+                          }`}
                         >
-                          견적에 추가
+                          {addedIndices.has(i) ? "추가 완료!" : "견적에 추가"}
                         </button>
                       </div>
                     </div>

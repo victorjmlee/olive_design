@@ -49,20 +49,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Build refinement context if present
-    const hasRefinements = refinements && refinements.length > 0 && previousDescription;
-    const refinementBlock = hasRefinements
-      ? `\n\nPrevious design description: ${previousDescription}\n\nUser requested the following changes (apply ALL of them):\n${refinements.map((r, i) => `${i + 1}. ${r}`).join("\n")}\n\nIncorporate these changes while keeping the rest of the design intact.`
-      : "";
-
     // Build English DALL-E prompt from Korean input + style profile
-    const dallePromptResponse = await anthropic.messages.create({
-      model: CLAUDE_MODEL,
-      max_tokens: 500,
-      messages: [
-        {
-          role: "user",
-          content: `You are an expert at writing DALL-E 3 prompts for interior design images.
+    const hasRefinements = refinements && refinements.length > 0 && previousDescription;
+
+    const promptContent = hasRefinements
+      ? `You are an expert at writing DALL-E 3 prompts for interior design images.
+
+You are MODIFYING an existing design based on the user's change requests. The user's requested changes are the TOP PRIORITY — you MUST reflect them clearly in the prompt.
+
+=== EXISTING DESIGN (base to modify) ===
+${previousDescription}
+
+=== USER'S CHANGE REQUESTS (MUST be applied) ===
+${refinements!.map((r, i) => `${i + 1}. ${r}`).join("\n")}
+
+=== ORIGINAL CONTEXT ===
+Room description: ${prompt}
+Style: ${styleProfile.style} / ${styleProfile.mood}
+Colors: ${styleProfile.colors.join(", ")}
+Materials: ${styleProfile.materials.join(", ")}
+
+CRITICAL: The DALL-E prompt you write MUST explicitly describe the changes the user requested. For example, if the user asked for green walls, the prompt MUST mention green walls. Keep everything else from the existing design the same.
+
+Write ONLY the DALL-E prompt (no explanation). Start with "Photorealistic interior design rendering of..."
+Keep it under 300 words. Include specific materials, colors, lighting, and camera angle.`
+      : `You are an expert at writing DALL-E 3 prompts for interior design images.
 
 Convert this Korean room description and style profile into a detailed English prompt for DALL-E 3.
 The prompt should produce a photorealistic interior design rendering.
@@ -74,12 +85,15 @@ Style profile:
 - Mood: ${styleProfile.mood}
 - Colors: ${styleProfile.colors.join(", ")}
 - Materials: ${styleProfile.materials.join(", ")}
-- Keywords: ${styleProfile.keywords.join(", ")}${refinementBlock}
+- Keywords: ${styleProfile.keywords.join(", ")}
 
 Write ONLY the DALL-E prompt (no explanation). Start with "Photorealistic interior design rendering of..."
-Keep it under 300 words. Include specific materials, colors, lighting, and camera angle.`,
-        },
-      ],
+Keep it under 300 words. Include specific materials, colors, lighting, and camera angle.`;
+
+    const dallePromptResponse = await anthropic.messages.create({
+      model: CLAUDE_MODEL,
+      max_tokens: 500,
+      messages: [{ role: "user", content: promptContent }],
     });
 
     const dallePrompt =

@@ -276,9 +276,9 @@ export default function Home() {
             </span>
             <button
               onClick={handleReset}
-              className="text-xs text-gray-400 hover:text-red-500 transition-colors"
+              className="text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 px-2 py-1 rounded transition-colors"
             >
-              초기화
+              처음부터 다시하기
             </button>
           </div>
         </div>

@@ -99,7 +99,7 @@ export default function DesignPrompt({
         {loading ? (
           <span className="flex items-center justify-center gap-2">
             <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            디자인 생성 중... (약 30초 소요)
+            디자인 생성 중...
           </span>
         ) : (
           "AI 디자인 생성"
