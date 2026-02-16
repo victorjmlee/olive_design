@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { CLAUDE_MODEL } from "@/app/config/models";
+import { CLAUDE_FAST_MODEL } from "@/app/config/models";
 
 function getClient() {
   const key = process.env.ANTHROPIC_API_KEY;
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     }
 
     const response = await client.messages.create({
-      model: CLAUDE_MODEL,
+      model: CLAUDE_FAST_MODEL,
       max_tokens: 2000,
       messages: [
         {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
-import { CLAUDE_MODEL, DALLE_MODEL } from "@/app/config/models";
+import { CLAUDE_MODEL, CLAUDE_FAST_MODEL, DALLE_MODEL } from "@/app/config/models";
 import type { StyleProfile } from "@/app/types";
 
 function getAnthropicClient() {
@@ -91,7 +91,7 @@ Write ONLY the DALL-E prompt (no explanation). Start with "Photorealistic interi
 Keep it under 300 words. Include specific materials, colors, lighting, and camera angle.`;
 
     const dallePromptResponse = await anthropic.messages.create({
-      model: CLAUDE_MODEL,
+      model: CLAUDE_FAST_MODEL,
       max_tokens: 500,
       messages: [{ role: "user", content: promptContent }],
     });
