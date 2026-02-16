@@ -16,7 +16,6 @@ export default function MaterialsList({
   onGoToEstimate,
 }: Props) {
   const [searchKeyword, setSearchKeyword] = useState<string | null>(null);
-  const [addedIndices, setAddedIndices] = useState<Set<number>>(new Set());
 
   const CATEGORY_COLORS: Record<string, string> = {
     바닥재: "bg-amber-100 text-amber-800",
@@ -46,11 +45,7 @@ export default function MaterialsList({
           {materials.map((mat, i) => (
             <div
               key={i}
-              className={`flex items-center gap-3 p-3 bg-white rounded-lg border transition-colors ${
-                addedIndices.has(i)
-                  ? "border-[var(--olive-300)] bg-[var(--olive-50)]"
-                  : "border-gray-200 hover:border-gray-300"
-              }`}
+              className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
             >
               <span
                 className={`px-2 py-0.5 rounded text-xs font-medium ${
@@ -67,34 +62,12 @@ export default function MaterialsList({
                   <p className="text-xs text-gray-400">{mat.estimatedSpec}</p>
                 )}
               </div>
-              <div className="flex gap-2 flex-shrink-0">
-                <button
-                  onClick={() => setSearchKeyword(mat.searchKeyword)}
-                  className="px-3 py-1.5 text-sm bg-[var(--naver-green)] text-white rounded-md hover:bg-[var(--naver-green-dark)] transition-colors"
-                >
-                  네이버 검색
-                </button>
-                {!addedIndices.has(i) && (
-                  <button
-                    onClick={() => {
-                      onAddToEstimate({
-                        name: mat.name,
-                        price: "",
-                        qty: 1,
-                      });
-                      setAddedIndices(new Set([...addedIndices, i]));
-                    }}
-                    className="px-3 py-1.5 text-sm border border-[var(--olive-400)] text-[var(--olive-600)] rounded-md hover:bg-[var(--olive-50)] transition-colors"
-                  >
-                    견적 추가
-                  </button>
-                )}
-                {addedIndices.has(i) && (
-                  <span className="px-3 py-1.5 text-sm text-[var(--olive-500)]">
-                    추가됨
-                  </span>
-                )}
-              </div>
+              <button
+                onClick={() => setSearchKeyword(mat.searchKeyword)}
+                className="px-3 py-1.5 text-sm bg-[var(--naver-green)] text-white rounded-md hover:bg-[var(--naver-green-dark)] transition-colors flex-shrink-0"
+              >
+                네이버 검색
+              </button>
             </div>
           ))}
 
