@@ -13,6 +13,7 @@ import type {
   AppState,
   StyleProfile,
   DesignResult,
+  DesignMessage,
   Material,
   EstimateRow,
 } from "@/app/types";
@@ -44,6 +45,7 @@ function defaultState(): AppState {
     styleProfile: null,
     designPrompt: "",
     designResult: null,
+    designMessages: [],
     materials: [],
     estimateRows: [],
     customerName: "",
@@ -77,7 +79,13 @@ export default function Home() {
     return 1;
   })();
 
-  const setStep = (step: number) => setState((s) => ({ ...s, step }));
+  const setStep = (step: number) =>
+    setState((s) => ({
+      ...s,
+      step,
+      // Clear refinement chat when going back to step 2
+      ...(step <= 2 ? { designMessages: [] } : {}),
+    }));
 
   // ─── Step 1: Style Analysis ───────────────────────────────────────────────
 
@@ -126,13 +134,77 @@ export default function Home() {
         description: data.description,
         prompt: data.prompt,
       };
-      setState((s) => ({ ...s, designResult: result, step: 3 }));
+      setState((s) => ({ ...s, designResult: result, designMessages: [], step: 3 }));
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "디자인 생성 실패");
     } finally {
       setLoading(false);
     }
   }, [state.designPrompt, state.styleProfile]);
+
+  // ─── Step 3b: Design Refinement ──────────────────────────────────────────
+
+  const handleRefineDesign = useCallback(
+    async (feedback: string) => {
+      if (!state.styleProfile || !state.designResult) return;
+
+      // Append user message immediately
+      const userMsg: DesignMessage = { role: "user", content: feedback };
+      setState((s) => ({
+        ...s,
+        designMessages: [...s.designMessages, userMsg],
+      }));
+
+      setLoading(true);
+      setError("");
+
+      try {
+        // Collect all refinement strings from history + new one
+        const allRefinements = [
+          ...state.designMessages
+            .filter((m) => m.role === "user")
+            .map((m) => m.content),
+          feedback,
+        ];
+
+        const res = await fetch("/api/design-generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            prompt: state.designPrompt,
+            styleProfile: state.styleProfile,
+            refinements: allRefinements,
+            previousDescription: state.designResult.description,
+          }),
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+
+        const result: DesignResult = {
+          imageBase64: data.imageBase64,
+          description: data.description,
+          prompt: data.prompt,
+        };
+
+        const assistantMsg: DesignMessage = {
+          role: "assistant",
+          content: data.description,
+          imageBase64: data.imageBase64,
+        };
+
+        setState((s) => ({
+          ...s,
+          designResult: result,
+          designMessages: [...s.designMessages, assistantMsg],
+        }));
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : "디자인 수정 실패");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [state.designPrompt, state.styleProfile, state.designResult, state.designMessages],
+  );
 
   // ─── Step 4: Materials Extraction ─────────────────────────────────────────
 
@@ -281,9 +353,10 @@ export default function Home() {
         {state.step === 3 && state.designResult && (
           <DesignResultView
             result={state.designResult}
-            onRegenerate={handleGenerateDesign}
+            onRefine={handleRefineDesign}
             onExtractMaterials={handleExtractMaterials}
             loading={loading}
+            messages={state.designMessages}
           />
         )}
 

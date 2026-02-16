@@ -11,6 +11,12 @@ export interface StyleProfile {
 
 // ─── Design Generation ──────────────────────────────────────────────────────
 
+export interface DesignMessage {
+  role: "user" | "assistant";
+  content: string;
+  imageBase64?: string;
+}
+
 export interface DesignRequest {
   prompt: string;            // user room description (Korean)
   styleProfile: StyleProfile;
@@ -73,6 +79,7 @@ export interface AppState {
   designPrompt: string;
   // Step 3
   designResult: DesignResult | null;
+  designMessages: DesignMessage[];
   // Step 4
   materials: Material[];
   // Step 5

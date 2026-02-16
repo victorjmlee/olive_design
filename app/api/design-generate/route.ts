@@ -35,9 +35,11 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { prompt, styleProfile } = body as {
+    const { prompt, styleProfile, refinements, previousDescription } = body as {
       prompt: string;
       styleProfile: StyleProfile;
+      refinements?: string[];
+      previousDescription?: string;
     };
 
     if (!prompt?.trim()) {
@@ -46,6 +48,12 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
+
+    // Build refinement context if present
+    const hasRefinements = refinements && refinements.length > 0 && previousDescription;
+    const refinementBlock = hasRefinements
+      ? `\n\nPrevious design description: ${previousDescription}\n\nUser requested the following changes (apply ALL of them):\n${refinements.map((r, i) => `${i + 1}. ${r}`).join("\n")}\n\nIncorporate these changes while keeping the rest of the design intact.`
+      : "";
 
     // Build English DALL-E prompt from Korean input + style profile
     const dallePromptResponse = await anthropic.messages.create({
@@ -66,7 +74,7 @@ Style profile:
 - Mood: ${styleProfile.mood}
 - Colors: ${styleProfile.colors.join(", ")}
 - Materials: ${styleProfile.materials.join(", ")}
-- Keywords: ${styleProfile.keywords.join(", ")}
+- Keywords: ${styleProfile.keywords.join(", ")}${refinementBlock}
 
 Write ONLY the DALL-E prompt (no explanation). Start with "Photorealistic interior design rendering of..."
 Keep it under 300 words. Include specific materials, colors, lighting, and camera angle.`,
