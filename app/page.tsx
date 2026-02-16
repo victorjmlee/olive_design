@@ -57,6 +57,7 @@ function defaultState(): AppState {
 export default function Home() {
   const [state, setState] = useState<AppState>(defaultState);
   const [loading, setLoading] = useState(false);
+  const [refining, setRefining] = useState(false);
   const [error, setError] = useState("");
   const [mounted, setMounted] = useState(false);
 
@@ -155,7 +156,7 @@ export default function Home() {
         designMessages: [...s.designMessages, userMsg],
       }));
 
-      setLoading(true);
+      setRefining(true);
       setError("");
 
       try {
@@ -200,7 +201,7 @@ export default function Home() {
       } catch (e: unknown) {
         setError(e instanceof Error ? e.message : "디자인 수정 실패");
       } finally {
-        setLoading(false);
+        setRefining(false);
       }
     },
     [state.designPrompt, state.styleProfile, state.designResult, state.designMessages],
@@ -333,19 +334,31 @@ export default function Home() {
 
         {/* Step 2: Design Prompt */}
         {state.step === 2 && state.styleProfile && (
-          <div className="space-y-8">
-            <div className="max-w-3xl mx-auto">
-              <StyleProfileView profile={state.styleProfile} />
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-[var(--olive-800)] mb-2">
+                디자인 요청
+              </h2>
+              <p className="text-gray-500">
+                어떤 공간을 디자인할지 설명해주세요
+              </p>
             </div>
-            <DesignPrompt
-              prompt={state.designPrompt}
-              styleProfile={state.styleProfile}
-              onPromptChange={(prompt) =>
-                setState((s) => ({ ...s, designPrompt: prompt }))
-              }
-              onGenerate={handleGenerateDesign}
-              loading={loading}
-            />
+            <div className="flex gap-6 flex-col lg:flex-row">
+              <div className="flex-1 min-w-0">
+                <StyleProfileView profile={state.styleProfile} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <DesignPrompt
+                  prompt={state.designPrompt}
+                  styleProfile={state.styleProfile}
+                  onPromptChange={(prompt) =>
+                    setState((s) => ({ ...s, designPrompt: prompt }))
+                  }
+                  onGenerate={handleGenerateDesign}
+                  loading={loading}
+                />
+              </div>
+            </div>
           </div>
         )}
 
@@ -356,6 +369,7 @@ export default function Home() {
             onRefine={handleRefineDesign}
             onExtractMaterials={handleExtractMaterials}
             loading={loading}
+            refining={refining}
             messages={state.designMessages}
           />
         )}

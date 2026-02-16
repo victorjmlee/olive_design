@@ -11,6 +11,7 @@ interface Props {
   onRefine: (feedback: string) => void;
   onExtractMaterials: () => void;
   loading: boolean;
+  refining: boolean;
   messages: DesignMessage[];
 }
 
@@ -19,6 +20,7 @@ export default function DesignResult({
   onRefine,
   onExtractMaterials,
   loading,
+  refining,
   messages,
 }: Props) {
   const [input, setInput] = useState("");
@@ -30,7 +32,7 @@ export default function DesignResult({
 
   const handleSend = () => {
     const text = input.trim();
-    if (!text || loading) return;
+    if (!text || refining) return;
     setInput("");
     onRefine(text);
   };
@@ -121,7 +123,7 @@ export default function DesignResult({
                 </div>
               </div>
             ))}
-            {loading && (
+            {refining && (
               <div className="flex justify-start">
                 <div className="bg-gray-100 rounded-lg px-3 py-2">
                   <span className="flex items-center gap-2 text-sm text-gray-500">
@@ -143,12 +145,12 @@ export default function DesignResult({
                 onKeyDown={handleKeyDown}
                 placeholder="예: 벽을 파란색으로 바꿔줘..."
                 rows={2}
-                disabled={loading}
+                disabled={refining}
                 className="flex-1 resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--olive-400)] disabled:opacity-50"
               />
               <button
                 onClick={handleSend}
-                disabled={loading || !input.trim()}
+                disabled={refining || !input.trim()}
                 className="self-end px-3 py-2 bg-[var(--olive-500)] text-white text-sm font-semibold rounded-lg hover:bg-[var(--olive-600)] disabled:opacity-50 transition-colors"
               >
                 전송
