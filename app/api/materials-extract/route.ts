@@ -8,6 +8,8 @@ function getClient() {
   return new Anthropic({ apiKey: key });
 }
 
+export const maxDuration = 60;
+
 export async function POST(request: NextRequest) {
   const client = getClient();
   if (!client) {

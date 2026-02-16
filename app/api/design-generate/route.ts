@@ -16,6 +16,8 @@ function getOpenAIClient() {
   return new OpenAI({ apiKey: key });
 }
 
+export const maxDuration = 60;
+
 export async function POST(request: NextRequest) {
   const anthropic = getAnthropicClient();
   const openai = getOpenAIClient();

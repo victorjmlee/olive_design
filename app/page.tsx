@@ -34,7 +34,23 @@ function loadState(): AppState {
 function saveState(state: AppState) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch {}
+  } catch {
+    // Quota exceeded — retry without large base64 images
+    try {
+      const lite = {
+        ...state,
+        uploadedImages: [],
+        designResult: state.designResult
+          ? { ...state.designResult, imageBase64: "" }
+          : null,
+        designMessages: state.designMessages.map((m) => ({
+          ...m,
+          imageBase64: undefined,
+        })),
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(lite));
+    } catch {}
+  }
 }
 
 function defaultState(): AppState {
