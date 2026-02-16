@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>올리브디자인 견적기</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 1rem; min-height: 100vh; }
+    .layout { display: flex; gap: 1.5rem; max-width: 1600px; margin: 0 auto; align-items: flex-start; }
+    @media (max-width: 1000px) { .layout { flex-direction: column; } }
+    .panel-left { flex: 1; min-width: 0; }
+    .panel-right { width: 800px; flex-shrink: 0; max-height: 72vh; position: sticky; top: 1rem; display: flex; flex-direction: column; }
+    .panel-right .estimate-wrap { overflow-y: auto; flex: 1; min-height: 0; }
+    @media (max-width: 1000px) { .panel-left { width: 100%; } .panel-right { width: 100%; position: static; max-height: none; } }
+    h1 { font-size: 1.4rem; margin-bottom: 1rem; }
+    .search-box { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; }
+    .search-options { display: flex; align-items: center; gap: 0.35rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .sort-btn { padding: 0.4rem 0.7rem; font-size: 0.9rem; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer; color: #333; }
+    .sort-btn:hover { background: #f5f5f5; }
+    .sort-btn.active { background: #03c75a; color: #fff; border-color: #03c75a; }
+    .search-box input { flex: 1; padding: 0.6rem 0.8rem; font-size: 1rem; border: 1px solid #ddd; border-radius: 6px; }
+    .search-box button { padding: 0.6rem 1.2rem; font-size: 1rem; background: #03c75a; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
+    .search-box button:hover { background: #02a84a; }
+    .meta { color: #666; font-size: 0.9rem; margin-bottom: 0.5rem; }
+    .paging { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap; }
+    .paging .btn-page { padding: 0.35rem 0.6rem; font-size: 0.9rem; }
+    .paging .btn-page:disabled { opacity: 0.5; cursor: not-allowed; }
+    .paging .page-num { padding: 0.2rem 0.5rem; cursor: pointer; border-radius: 4px; }
+    .paging .page-num:hover { background: #eee; }
+    .paging .page-num.current { background: #03c75a; color: #fff; }
+    .paging .page-info { color: #666; font-size: 0.9rem; margin-left: 0.5rem; }
+    .error { color: #c62828; padding: 0.75rem; background: #ffebee; border-radius: 6px; margin-bottom: 0.75rem; }
+    .loading { color: #666; padding: 0.75rem; }
+    /* 검색 결과 */
+    .results { list-style: none; padding: 0; margin: 0; max-height: calc(100vh - 12rem); overflow-y: auto; }
+    .result-item { border: 1px solid #eee; border-radius: 8px; margin-bottom: 0.5rem; overflow: hidden; }
+    .result-card { display: flex; gap: 1rem; padding: 0.75rem 1rem; align-items: center; cursor: pointer; }
+    .result-card:hover { background: #f9f9f9; }
+    .result-item img.thumb { width: 56px; height: 56px; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
+    .result-card .info { flex: 1; min-width: 0; }
+    .result-card .title { font-weight: 600; font-size: 0.95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .result-card .price { color: #e53935; font-weight: 600; font-size: 0.95rem; }
+    .result-card .toggle { color: #03c75a; font-size: 0.85rem; flex-shrink: 0; }
+    .result-detail { display: none; padding: 1rem; border-top: 1px solid #eee; background: #fafafa; }
+    .result-detail.show { display: block; }
+    .result-detail .detail-row { display: flex; gap: 1rem; margin-bottom: 0.75rem; align-items: flex-start; }
+    .result-detail .detail-row img { width: 80px; height: 80px; object-fit: cover; border-radius: 6px; }
+    .result-detail .detail-body { flex: 1; min-width: 0; }
+    .result-detail .detail-title { font-weight: 600; margin-bottom: 0.25rem; word-break: break-word; }
+    .result-detail .detail-price { color: #e53935; font-weight: 600; margin-bottom: 0.5rem; }
+    .result-detail .add-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin-top: 0.75rem; }
+    .result-detail .add-row input[type="number"] { width: 4rem; padding: 0.4rem; border: 1px solid #ddd; border-radius: 4px; }
+    .btn { padding: 0.4rem 0.8rem; font-size: 0.9rem; border: none; border-radius: 4px; cursor: pointer; }
+    .btn-primary { background: #03c75a; color: #fff; }
+    .btn-primary:hover { background: #02a84a; }
+    .btn-link { background: none; color: #1976d2; text-decoration: underline; padding: 0.25rem 0; }
+    .btn-link:hover { color: #0d47a1; }
+    /* 견적 시트 */
+    .section-title { font-size: 1.15rem; margin: 0 0 0.75rem; padding-bottom: 0.25rem; border-bottom: 2px solid #03c75a; }
+    .panel-right .actions { margin-bottom: 0.5rem; }
+    .panel-right table { font-size: 0.9rem; }
+    .actions { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap; }
+    .btn-secondary { background: #e0e0e0; color: #333; }
+    .btn-secondary:hover { background: #d0d0d0; }
+    .btn-danger { background: #f44336; color: #fff; }
+    .btn-danger:hover { background: #d32f2f; }
+    .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.85rem; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
+    th, td { border: 1px solid #ddd; padding: 0.5rem 0.6rem; text-align: left; }
+    th { background: #f5f5f5; font-weight: 600; }
+    td input { width: 100%; padding: 0.35rem; border: 1px solid #eee; border-radius: 4px; }
+    td input[readonly] { background: #f9f9f9; }
+    .col-no { width: 2.5rem; text-align: center; }
+    .col-name { min-width: 200px; }
+    .col-price { width: 100px; }
+    .col-qty { width: 68px; }
+    .col-total { width: 100px; }
+    .col-actions { width: 60px; }
+    .total-row { font-weight: 600; background: #f0f7f0; }
+    .total-row td { border-top: 2px solid #03c75a; }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <div class="panel-left">
+      <h1>올리브디자인 견적기</h1>
+      <div class="search-box">
+        <input type="text" id="query" placeholder="검색어 (예: 타일, 마루, 도배지)" value="" autofocus>
+        <button type="button" id="searchBtn">검색</button>
+      </div>
+      <div class="search-options">
+        <button type="button" class="sort-btn active" data-sort="sim">추천순</button>
+        <button type="button" class="sort-btn" data-sort="date">날짜순</button>
+        <button type="button" class="sort-btn" data-sort="asc">저가순</button>
+        <button type="button" class="sort-btn" data-sort="dsc">고가순</button>
+      </div>
+      <div id="meta" class="meta" style="display: none;"></div>
+      <div id="paging" class="paging" style="display: none;"></div>
+      <div id="error" class="error" style="display: none;"></div>
+      <div id="loading" class="loading" style="display: none;">검색 중...</div>
+      <ul id="results" class="results"></ul>
+    </div>
+    <div class="panel-right">
+      <h2 class="section-title">견적 시트</h2>
+      <div class="estimate-meta" style="margin-bottom:0.75rem">
+        <label for="customerName" style="font-size:0.9rem;margin-right:0.5rem">고객명</label>
+        <input type="text" id="customerName" placeholder="고객명 입력" style="padding:0.4rem 0.6rem;border:1px solid #ddd;border-radius:4px;width:160px;font-size:0.9rem">
+      </div>
+      <div class="actions">
+        <button type="button" class="btn btn-secondary" id="addRow">+ 행 추가</button>
+        <button type="button" class="btn btn-secondary" id="exportPdf">PDF 내보내기</button>
+      </div>
+      <div class="estimate-wrap">
+      <table id="estimateTable">
+        <thead>
+          <tr>
+            <th class="col-no">No</th>
+            <th class="col-name">품목명</th>
+            <th class="col-price">단가</th>
+            <th class="col-qty">수량</th>
+            <th class="col-total">금액</th>
+            <th class="col-actions"></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+        <tfoot>
+          <tr class="total-row">
+            <td colspan="4" style="text-align: right;">합계</td>
+            <td id="grandTotal">0</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" crossorigin="anonymous"></script>
+  <script>
+    const queryEl = document.getElementById('query');
+    const searchBtn = document.getElementById('searchBtn');
+    const metaEl = document.getElementById('meta');
+    const errorEl = document.getElementById('error');
+    const loadingEl = document.getElementById('loading');
+    const resultsEl = document.getElementById('results');
+    const tbody = document.getElementById('tbody');
+    const grandTotalEl = document.getElementById('grandTotal');
+    const customerNameEl = document.getElementById('customerName');
+
+    const DISPLAY = 10;
+    let lastSearchItems = [];
+    let currentSort = 'sim';
+    function getSort() { return currentSort; }
+    function setSortButtonsActive() {
+      document.querySelectorAll('.sort-btn').forEach(function (btn) {
+        btn.classList.toggle('active', btn.getAttribute('data-sort') === currentSort);
+      });
+    }
+    let estimateRows = [];
+    let currentQuery = '';
+    let totalSearchResults = 0;
+    let currentPage = 1;
+
+    function stripHtml(html) {
+      const div = document.createElement('div');
+      div.innerHTML = html || '';
+      return div.textContent || div.innerText || '';
+    }
+
+    function formatNum(n) {
+      return Number(n).toLocaleString();
+    }
+
+    function showError(msg) {
+      errorEl.textContent = msg;
+      errorEl.style.display = 'block';
+      metaEl.style.display = 'none';
+      resultsEl.innerHTML = '';
+    }
+
+    function hideError() {
+      errorEl.style.display = 'none';
+    }
+
+    function renderResultItems(items) {
+      if (!items.length) {
+        resultsEl.innerHTML = '<li class="result-item">검색 결과가 없습니다.</li>';
+        return;
+      }
+      resultsEl.innerHTML = items.map(function (item, i) {
+        const title = stripHtml(item.title || '');
+        const priceRaw = item.lprice;
+        const price = (priceRaw !== undefined && priceRaw !== null && priceRaw !== '') ? String(priceRaw).replace(/[^0-9]/g, '') || '0' : '0';
+        const priceStr = formatNum(price) + '원';
+        const image = item.image || '';
+        const link = item.link || '#';
+        const mall = item.mallName || '';
+        return '<li class="result-item" data-index="' + i + '" data-price="' + price + '">' +
+          '<div class="result-card">' +
+          (image ? '<img class="thumb" src="' + image + '" alt="">' : '') +
+          '<div class="info">' +
+          '<div class="title">' + title.substring(0, 50) + (title.length > 50 ? '…' : '') + '</div>' +
+          '<div class="price">' + priceStr + (mall ? ' · ' + mall : '') + '</div>' +
+          '</div>' +
+          '<span class="toggle">▼ 펼쳐보기</span>' +
+          '</div>' +
+          '<div class="result-detail">' +
+          '<div class="detail-row">' +
+          (image ? '<img src="' + image + '" alt="">' : '') +
+          '<div class="detail-body">' +
+          '<div class="detail-title">' + title + '</div>' +
+          '<div class="detail-price">' + priceStr + '</div>' +
+          '<a href="' + link + '" target="_blank" rel="noopener" class="btn btn-link">원본 상품 보기 ↗</a>' +
+          '<div class="add-row">' +
+          '수량 <input type="number" class="item-qty" value="1" min="1" style="width:4rem"> ' +
+          '<button type="button" class="btn btn-primary btn-add-estimate">견적에 추가</button>' +
+          '</div></div></div></div></li>';
+      }).join('');
+
+      resultsEl.querySelectorAll('.result-card').forEach(function (card) {
+        card.addEventListener('click', function () {
+          const item = this.closest('.result-item');
+          const detail = item.querySelector('.result-detail');
+          const toggle = item.querySelector('.toggle');
+          const isOpen = detail.classList.toggle('show');
+          toggle.textContent = isOpen ? '▲ 접기' : '▼ 펼쳐보기';
+        });
+      });
+
+      function addThisItemToEstimate(resultItem) {
+        const i = parseInt(resultItem.getAttribute('data-index'), 10);
+        const row = lastSearchItems[i];
+        if (!row) return;
+        const qtyInput = resultItem.querySelector('.item-qty');
+        const qty = parseInt(qtyInput.value, 10) || 1;
+        const name = stripHtml(row.title || '');
+        var price = '0';
+        if (row.lprice !== undefined && row.lprice !== null && row.lprice !== '') {
+          price = String(row.lprice).replace(/\D/g, '');
+        }
+        if (!price) {
+          var priceEl = resultItem.querySelector('.detail-price');
+          if (priceEl && priceEl.textContent) {
+            price = priceEl.textContent.replace(/\D/g, '') || '0';
+          }
+        }
+        if (!price) price = '0';
+        estimateRows.push({ name: name, price: String(price), qty: qty });
+        saveEstimate();
+        renderEstimate();
+      }
+
+      resultsEl.querySelectorAll('.btn-add-estimate').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          addThisItemToEstimate(this.closest('.result-item'));
+        });
+      });
+
+      resultsEl.querySelectorAll('.item-qty').forEach(function (qtyInput) {
+        qtyInput.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            addThisItemToEstimate(this.closest('.result-item'));
+          }
+        });
+      });
+    }
+
+    function renderPaging() {
+      const totalPages = Math.ceil(totalSearchResults / DISPLAY) || 1;
+      const pagingEl = document.getElementById('paging');
+      if (totalSearchResults <= DISPLAY && currentPage === 1) {
+        pagingEl.style.display = 'none';
+        return;
+      }
+      pagingEl.style.display = 'flex';
+      pagingEl.innerHTML = '';
+
+      const prevBtn = document.createElement('button');
+      prevBtn.className = 'btn btn-secondary btn-page';
+      prevBtn.textContent = '이전';
+      prevBtn.disabled = currentPage <= 1;
+      prevBtn.addEventListener('click', function () { if (currentPage > 1) loadPage(currentPage - 1); });
+      pagingEl.appendChild(prevBtn);
+
+      const startNum = Math.max(1, currentPage - 2);
+      const endNum = Math.min(totalPages, currentPage + 2);
+      for (let p = startNum; p <= endNum; p++) {
+        const span = document.createElement('span');
+        span.className = 'page-num' + (p === currentPage ? ' current' : '');
+        span.textContent = p;
+        span.addEventListener('click', function () { if (p !== currentPage) loadPage(p); });
+        pagingEl.appendChild(span);
+      }
+
+      const nextBtn = document.createElement('button');
+      nextBtn.className = 'btn btn-secondary btn-page';
+      nextBtn.textContent = '다음';
+      nextBtn.disabled = currentPage >= totalPages;
+      nextBtn.addEventListener('click', function () { if (currentPage < totalPages) loadPage(currentPage + 1); });
+      pagingEl.appendChild(nextBtn);
+
+      const info = document.createElement('span');
+      info.className = 'page-info';
+      info.textContent = currentPage + ' / ' + totalPages + ' 페이지 (총 ' + formatNum(totalSearchResults) + '건)';
+      pagingEl.appendChild(info);
+    }
+
+    async function loadPage(page) {
+      if (!currentQuery) return;
+      loadingEl.style.display = 'block';
+      const start = (page - 1) * DISPLAY + 1;
+      try {
+        const res = await fetch('/api/search?query=' + encodeURIComponent(currentQuery) + '&display=' + DISPLAY + '&start=' + start + '&sort=' + getSort() + '&_=' + Date.now(), { cache: 'no-store' });
+        const data = await res.json();
+        loadingEl.style.display = 'none';
+        if (data.error) {
+          showError(data.error);
+          return;
+        }
+        lastSearchItems = data.items || [];
+        currentPage = page;
+        renderResultItems(lastSearchItems);
+        renderPaging();
+      } catch (e) {
+        loadingEl.style.display = 'none';
+        showError('요청 실패: ' + e.message);
+      }
+    }
+
+    async function search() {
+      const query = queryEl.value.trim();
+      if (!query) return;
+      hideError();
+      loadingEl.style.display = 'block';
+      resultsEl.innerHTML = '';
+      metaEl.style.display = 'none';
+      document.getElementById('paging').style.display = 'none';
+      currentQuery = query;
+
+      try {
+        const res = await fetch('/api/search?query=' + encodeURIComponent(query) + '&display=' + DISPLAY + '&start=1&sort=' + getSort() + '&_=' + Date.now(), { cache: 'no-store' });
+        const data = await res.json();
+        loadingEl.style.display = 'none';
+
+        if (data.error) {
+          showError(data.error);
+          return;
+        }
+
+        const items = data.items || [];
+        lastSearchItems = items;
+        totalSearchResults = parseInt(data.total, 10) || 0;
+        currentPage = 1;
+
+        var sortLabel = { sim: '추천순', date: '날짜순', asc: '저가순', dsc: '고가순' }[getSort()] || '추천순';
+        metaEl.textContent = '총 ' + formatNum(totalSearchResults) + '건 (' + sortLabel + ') · 클릭하여 펼친 뒤 수량 입력하고 견적에 추가';
+        metaEl.style.display = 'block';
+
+        renderResultItems(items);
+        renderPaging();
+      } catch (e) {
+        loadingEl.style.display = 'none';
+        showError('요청 실패: ' + e.message);
+      }
+    }
+
+    var ESTIMATE_STORAGE_KEY = 'olive_estimate';
+    var CUSTOMER_STORAGE_KEY = 'olive_estimate_customer';
+
+    function loadEstimate() {
+      try {
+        var saved = localStorage.getItem(ESTIMATE_STORAGE_KEY);
+        if (saved) {
+          var parsed = JSON.parse(saved);
+          estimateRows = Array.isArray(parsed) ? parsed : [];
+        } else {
+          estimateRows = [];
+        }
+      } catch (e) {
+        estimateRows = [];
+      }
+      var cust = localStorage.getItem(CUSTOMER_STORAGE_KEY);
+      if (customerNameEl && cust !== null) customerNameEl.value = cust;
+    }
+
+    function saveEstimate() {
+      try {
+        localStorage.setItem(ESTIMATE_STORAGE_KEY, JSON.stringify(estimateRows));
+      } catch (e) {}
+      if (customerNameEl) {
+        try {
+          localStorage.setItem(CUSTOMER_STORAGE_KEY, customerNameEl.value || '');
+        } catch (e) {}
+      }
+    }
+
+    function getRowTotal(i) {
+      const r = estimateRows[i];
+      const p = parseInt(r.price, 10) || 0;
+      const q = parseInt(r.qty, 10) || 0;
+      return p * q;
+    }
+
+    function getGrandTotal() {
+      return estimateRows.reduce(function (sum, _, i) { return sum + getRowTotal(i); }, 0);
+    }
+
+    function updateRowTotal(i) {
+      const tr = tbody.querySelector('[data-index="' + i + '"]');
+      if (!tr) return;
+      const totalInput = tr.querySelector('.row-total');
+      if (totalInput) totalInput.value = formatNum(getRowTotal(i));
+      grandTotalEl.textContent = formatNum(getGrandTotal()) + '원';
+      saveEstimate();
+    }
+
+    function renderEstimate() {
+      if (estimateRows.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#888;padding:1.5rem;">검색 결과에서 견적에 추가하거나, + 행 추가를 누르세요.</td></tr>';
+        grandTotalEl.textContent = '0원';
+        return;
+      }
+      tbody.innerHTML = estimateRows.map(function (r, i) {
+        const total = getRowTotal(i);
+        var priceVal = (r.price != null && r.price !== '') ? String(r.price).replace(/"/g, '&quot;') : '';
+        return '<tr data-index="' + i + '">' +
+          '<td class="col-no">' + (i + 1) + '</td>' +
+          '<td class="col-name"><input type="text" class="row-name" value="' + (r.name || '').replace(/"/g, '&quot;') + '" placeholder="품목명"></td>' +
+          '<td class="col-price"><input type="text" class="row-price" value="' + priceVal + '" placeholder="단가" inputmode="numeric"></td>' +
+          '<td class="col-qty"><input type="number" class="row-qty" value="' + (r.qty || 1) + '" min="1" style="width:3.5rem"></td>' +
+          '<td class="col-total"><input type="text" class="row-total" value="' + formatNum(total) + '" readonly></td>' +
+          '<td class="col-actions"><button type="button" class="btn btn-sm btn-danger btn-remove">삭제</button></td></tr>';
+      }).join('');
+      grandTotalEl.textContent = formatNum(getGrandTotal()) + '원';
+
+      tbody.querySelectorAll('.row-name').forEach(function (el, i) {
+        el.addEventListener('input', function () { estimateRows[i].name = this.value; saveEstimate(); });
+      });
+      tbody.querySelectorAll('.row-price').forEach(function (el, i) {
+        el.addEventListener('input', function () {
+          estimateRows[i].price = this.value.replace(/[^0-9]/g, '');
+          updateRowTotal(i);
+        });
+      });
+      tbody.querySelectorAll('.row-qty').forEach(function (el, i) {
+        el.addEventListener('input', function () {
+          estimateRows[i].qty = parseInt(this.value, 10) || 1;
+          updateRowTotal(i);
+        });
+      });
+      tbody.querySelectorAll('.btn-remove').forEach(function (el, i) {
+        el.addEventListener('click', function () {
+          estimateRows.splice(i, 1);
+          renderEstimate();
+        });
+      });
+    }
+
+    function addRow() {
+      estimateRows.push({ name: '', price: '', qty: 1 });
+      saveEstimate();
+      renderEstimate();
+    }
+
+    function exportPdf() {
+      if (estimateRows.length === 0) {
+        alert('견적 품목이 없습니다.');
+        return;
+      }
+      var ROWS_PER_PAGE = 14;
+      var thead = '<thead><tr style="background:#f5f5f5;border:1px solid #333">' +
+        '<th style="padding:8px;text-align:center;width:40px;border:1px solid #333">No</th>' +
+        '<th style="padding:8px;text-align:left;border:1px solid #333">품목명</th>' +
+        '<th style="padding:8px;text-align:right;width:80px;border:1px solid #333">단가</th>' +
+        '<th style="padding:8px;text-align:center;width:50px;border:1px solid #333">수량</th>' +
+        '<th style="padding:8px;text-align:right;width:90px;border:1px solid #333">금액</th></tr></thead>';
+      var totalHtml = '<tr style="font-weight:bold;background:#f0f7f0"><td colspan="3" style="text-align:right;border:1px solid #ddd;padding:8px">합계</td><td style="border:1px solid #ddd"></td><td style="text-align:right;border:1px solid #ddd;padding:8px">' + formatNum(getGrandTotal()) + '원</td></tr>';
+      var baseStyle = 'font-family:Malgun Gothic,Apple SD Gothic Neo,sans-serif;padding:16px;background:#fff;color:#000;width:100%;box-sizing:border-box;';
+      var tableStyle = 'width:100%;border-collapse:collapse;font-size:12px;color:#000;table-layout:fixed';
+      var customerRaw = (customerNameEl && customerNameEl.value) ? String(customerNameEl.value).trim() : '';
+      var customerEsc = customerRaw.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      var customerLine = customerRaw ? '<p style="color:#333;margin:0 0 8px 0;font-size:14px">고객명: ' + customerEsc + '</p>' : '';
+      var headerBlock = '<h2 style="margin:0 0 8px 0;color:#000">올리브디자인 견적서</h2>' + customerLine + '<p style="color:#333;margin:0 0 12px 0;font-size:14px">' + new Date().toLocaleDateString('ko-KR') + '</p>';
+      var pageChunks = [];
+      for (var start = 0; start < estimateRows.length; start += ROWS_PER_PAGE) {
+        var end = Math.min(start + ROWS_PER_PAGE, estimateRows.length);
+        var rowsHtml = '';
+        for (var i = start; i < end; i++) {
+          var r = estimateRows[i];
+          var p = parseInt(r.price, 10) || 0;
+          var q = parseInt(r.qty, 10) || 0;
+          var total = p * q;
+          var name = (r.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+          rowsHtml += '<tr><td style="text-align:center;border:1px solid #ddd;padding:6px">' + (i + 1) + '</td><td style="border:1px solid #ddd;padding:6px;word-break:break-word">' + name + '</td><td style="text-align:right;border:1px solid #ddd;padding:6px">' + formatNum(p) + '</td><td style="text-align:center;border:1px solid #ddd;padding:6px">' + q + '</td><td style="text-align:right;border:1px solid #ddd;padding:6px">' + formatNum(total) + '</td></tr>';
+        }
+        var isLast = end >= estimateRows.length;
+        var tableBody = '<tbody>' + rowsHtml + (isLast ? totalHtml : '') + '</tbody>';
+        var showHeader = start === 0;
+        var pageBreakClass = isLast ? 'pdf-page' : 'pdf-page html2pdf__page-break';
+        var block = '<div class="' + pageBreakClass + '" style="' + baseStyle + '">' + (showHeader ? headerBlock : '') + '<table style="' + tableStyle + '">' + thead + tableBody + '</table></div>';
+        pageChunks.push(block);
+      }
+      if (pageChunks.length === 0) pageChunks.push('<div class="pdf-page" style="' + baseStyle + '">' + headerBlock + '<table style="' + tableStyle + '">' + thead + '<tbody>' + totalHtml + '</tbody></table></div>');
+      var fullHtml = pageChunks.join('');
+      var el = document.createElement('div');
+      el.innerHTML = fullHtml;
+      el.id = 'pdf-export-container';
+      el.style.cssText = 'width:680px;min-height:400px;background:#fff;color:#000;padding:0;';
+      var wrap = document.querySelector('.estimate-wrap');
+      wrap.insertBefore(el, wrap.firstChild);
+      var pdfDate = new Date().toISOString().slice(0, 10);
+      var safeName = customerRaw ? customerRaw.replace(/[/\\:*?"<>|]/g, '_').slice(0, 50) : '';
+      var pdfFilename = safeName ? '견적서_' + safeName + '_' + pdfDate + '.pdf' : '견적서_' + pdfDate + '.pdf';
+      var opt = {
+        margin: 12,
+        filename: pdfFilename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 1.5, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['legacy'] }
+      };
+      function cleanup() {
+        if (el.parentNode) el.parentNode.removeChild(el);
+      }
+      function doPdf() {
+        html2pdf().set(opt).from(el).save().then(cleanup).catch(function (err) {
+          cleanup();
+          alert('PDF 생성 실패: ' + (err.message || err));
+        });
+      }
+      setTimeout(doPdf, 100);
+    }
+
+    searchBtn.addEventListener('click', search);
+    queryEl.addEventListener('keydown', function (e) { if (e.key === 'Enter') search(); });
+    document.querySelectorAll('.sort-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        currentSort = this.getAttribute('data-sort');
+        setSortButtonsActive();
+        if (currentQuery) search();
+      });
+    });
+    document.getElementById('addRow').addEventListener('click', addRow);
+    document.getElementById('exportPdf').addEventListener('click', exportPdf);
+    if (customerNameEl) {
+      customerNameEl.addEventListener('input', function () {
+        try { localStorage.setItem(CUSTOMER_STORAGE_KEY, this.value || ''); } catch (e) {}
+      });
+    }
+
+    loadEstimate();
+    renderEstimate();
+  </script>
+</body>
+</html>
