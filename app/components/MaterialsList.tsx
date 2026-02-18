@@ -1,21 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import type { Material, EstimateRow } from "@/app/types";
+import type { Material, EstimateRow, RoomEntry } from "@/app/types";
 import NaverSearchPanel from "./NaverSearchPanel";
 
 interface Props {
   materials: Material[];
   onAddToEstimate: (row: EstimateRow) => void;
   onGoToEstimate: () => void;
+  rooms?: RoomEntry[];
 }
 
 export default function MaterialsList({
   materials,
   onAddToEstimate,
   onGoToEstimate,
+  rooms,
 }: Props) {
   const [searchKeyword, setSearchKeyword] = useState<string | null>(null);
+  const [activeRoomFilter, setActiveRoomFilter] = useState<string | null>(null);
 
   const CATEGORY_COLORS: Record<string, string> = {
     바닥재: "bg-amber-100 text-amber-800",
@@ -28,6 +31,14 @@ export default function MaterialsList({
     기타: "bg-gray-100 text-gray-800",
   };
 
+  const hasMultipleRooms = rooms && rooms.length > 1;
+
+  // When rooms are provided with materials, show per-room filtering
+  const displayMaterials =
+    hasMultipleRooms && activeRoomFilter
+      ? rooms!.find((r) => r.id === activeRoomFilter)?.materials || []
+      : materials;
+
   return (
     <div className="max-w-6xl mx-auto">
       <div className="text-center mb-6">
@@ -39,10 +50,39 @@ export default function MaterialsList({
         </p>
       </div>
 
+      {/* Room filter tabs */}
+      {hasMultipleRooms && (
+        <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
+          <button
+            onClick={() => setActiveRoomFilter(null)}
+            className={`px-3 py-1.5 text-sm rounded-full whitespace-nowrap transition-colors ${
+              activeRoomFilter === null
+                ? "bg-[var(--olive-500)] text-white"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            전체 ({materials.length})
+          </button>
+          {rooms!.map((room) => (
+            <button
+              key={room.id}
+              onClick={() => setActiveRoomFilter(room.id)}
+              className={`px-3 py-1.5 text-sm rounded-full whitespace-nowrap transition-colors ${
+                activeRoomFilter === room.id
+                  ? "bg-[var(--olive-500)] text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              {room.name} ({room.materials.length})
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="flex gap-6 flex-col lg:flex-row">
         {/* Materials list */}
         <div className="flex-1 space-y-2">
-          {materials.map((mat, i) => (
+          {displayMaterials.map((mat, i) => (
             <div
               key={i}
               className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"

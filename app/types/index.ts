@@ -59,12 +59,34 @@ export interface NaverSearchResult {
   start: number;
 }
 
+// ─── Design Variations (A/B comparison) ─────────────────────────────────────
+
+export interface DesignVariation {
+  id: string;
+  label: string;
+  imageBase64: string;
+  description: string;
+  dallePrompt: string;
+}
+
 // ─── Estimate ───────────────────────────────────────────────────────────────
 
 export interface EstimateRow {
   name: string;
   price: string;
   qty: number;
+}
+
+// ─── Multi-room ─────────────────────────────────────────────────────────────
+
+export interface RoomEntry {
+  id: string;
+  name: string;
+  prompt: string;
+  designResult: DesignResult | null;
+  designMessages: DesignMessage[];
+  variations: DesignVariation[];
+  materials: Material[];
 }
 
 // ─── App State ──────────────────────────────────────────────────────────────
@@ -77,9 +99,14 @@ export interface AppState {
   styleProfile: StyleProfile | null;
   // Step 2
   designPrompt: string;
+  roomMode: "single" | "multi";
+  rooms: RoomEntry[];
+  activeRoomId: string | null;
   // Step 3
   designResult: DesignResult | null;
   designMessages: DesignMessage[];
+  variations: DesignVariation[];
+  selectedVariationId: string | null;
   // Step 4
   materials: Material[];
   // Step 5

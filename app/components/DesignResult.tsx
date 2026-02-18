@@ -4,7 +4,9 @@ import { useState, useRef, useEffect } from "react";
 import type {
   DesignResult as DesignResultType,
   DesignMessage,
+  DesignVariation,
 } from "@/app/types";
+import VariationGrid from "./VariationGrid";
 
 interface Props {
   result: DesignResultType;
@@ -13,6 +15,11 @@ interface Props {
   loading: boolean;
   refining: boolean;
   messages: DesignMessage[];
+  variations: DesignVariation[];
+  selectedVariationId: string | null;
+  onSelectVariation: (id: string | null) => void;
+  onGenerateVariations: (count: number) => void;
+  variationsLoading: boolean;
 }
 
 export default function DesignResult({
@@ -22,6 +29,11 @@ export default function DesignResult({
   loading,
   refining,
   messages,
+  variations,
+  selectedVariationId,
+  onSelectVariation,
+  onGenerateVariations,
+  variationsLoading,
 }: Props) {
   const [input, setInput] = useState("");
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -44,20 +56,37 @@ export default function DesignResult({
     }
   };
 
+  // Display selected variation or original
+  const selectedVariation = selectedVariationId
+    ? variations.find((v) => v.id === selectedVariationId)
+    : null;
+
+  const displayImage = selectedVariation
+    ? selectedVariation.imageBase64
+    : result.imageBase64;
+  const displayDescription = selectedVariation
+    ? selectedVariation.description
+    : result.description;
+
   return (
     <div className="max-w-7xl mx-auto">
       <div className="text-center mb-6">
         <h2 className="text-2xl font-bold text-[var(--olive-800)]">
           생성된 디자인
         </h2>
+        {selectedVariation && (
+          <p className="text-sm text-[var(--olive-600)] mt-1">
+            변형: {selectedVariation.label}
+          </p>
+        )}
       </div>
 
       <div className="flex gap-6 flex-col lg:flex-row">
-        {/* Left: image + description */}
+        {/* Left: image + description + variations */}
         <div className="flex-1 min-w-0 space-y-4">
           <div className="rounded-xl overflow-hidden border border-gray-200 shadow-lg">
             <img
-              src={result.imageBase64}
+              src={displayImage}
               alt="AI 생성 인테리어 디자인"
               className="w-full"
             />
@@ -68,7 +97,7 @@ export default function DesignResult({
               디자인 설명
             </h3>
             <div className="text-gray-700 text-sm leading-relaxed whitespace-pre-line max-h-48 overflow-y-auto">
-              {result.description}
+              {displayDescription}
             </div>
           </div>
 
@@ -88,6 +117,15 @@ export default function DesignResult({
               )}
             </button>
           </div>
+
+          {/* Variation Grid */}
+          <VariationGrid
+            variations={variations}
+            selectedId={selectedVariationId}
+            onSelect={onSelectVariation}
+            onGenerate={onGenerateVariations}
+            loading={variationsLoading}
+          />
         </div>
 
         {/* Right: chat */}

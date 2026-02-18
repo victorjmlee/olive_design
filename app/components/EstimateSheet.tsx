@@ -10,6 +10,7 @@ interface Props {
   onRowsChange: (rows: EstimateRow[]) => void;
   onCustomerNameChange: (name: string) => void;
   onExportPdf: () => void;
+  onExportConstructionPdf?: () => void;
 }
 
 function formatNum(n: number | string): string {
@@ -22,6 +23,7 @@ export default function EstimateSheet({
   onRowsChange,
   onCustomerNameChange,
   onExportPdf,
+  onExportConstructionPdf,
 }: Props) {
   const [showSearch, setShowSearch] = useState(false);
 
@@ -102,6 +104,14 @@ export default function EstimateSheet({
               >
                 PDF 내보내기
               </button>
+              {onExportConstructionPdf && (
+                <button
+                  onClick={onExportConstructionPdf}
+                  className="px-3 py-1.5 text-sm bg-[var(--olive-700)] text-white rounded-md hover:bg-[var(--olive-800)] transition-colors"
+                >
+                  시공 참고서 PDF
+                </button>
+              )}
             </div>
 
             {/* Table */}
