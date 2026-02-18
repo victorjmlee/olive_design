@@ -200,33 +200,41 @@ export default function Home() {
     setLoading(true);
     setError("");
 
-    const BATCH_SIZE = 3;
+    const BATCH_SIZE = 2;
+    const STAGGER_MS = 2000;
     const updatedRooms = [...state.rooms];
+
+    async function generateRoom(room: RoomEntry) {
+      const res = await fetch("/api/design-generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: room.prompt,
+          styleProfile: state.styleProfile,
+        }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      return {
+        roomId: room.id,
+        result: {
+          imageBase64: data.imageBase64,
+          description: data.description,
+          prompt: data.prompt,
+        } as DesignResult,
+      };
+    }
 
     try {
       for (let i = 0; i < updatedRooms.length; i += BATCH_SIZE) {
         const batch = updatedRooms.slice(i, i + BATCH_SIZE);
+        // Stagger requests to avoid DALL-E rate limiting
         const results = await Promise.allSettled(
-          batch.map(async (room) => {
-            const res = await fetch("/api/design-generate", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                prompt: room.prompt,
-                styleProfile: state.styleProfile,
-              }),
-            });
-            const data = await res.json();
-            if (data.error) throw new Error(data.error);
-            return {
-              roomId: room.id,
-              result: {
-                imageBase64: data.imageBase64,
-                description: data.description,
-                prompt: data.prompt,
-              } as DesignResult,
-            };
-          }),
+          batch.map((room, idx) =>
+            new Promise<{ roomId: string; result: DesignResult }>((resolve, reject) => {
+              setTimeout(() => generateRoom(room).then(resolve, reject), idx * STAGGER_MS);
+            }),
+          ),
         );
 
         results.forEach((r, idx) => {
@@ -246,6 +254,24 @@ export default function Home() {
           ...s,
           rooms: [...updatedRooms],
         }));
+      }
+
+      // Retry failed rooms once sequentially
+      for (let i = 0; i < updatedRooms.length; i++) {
+        if (!updatedRooms[i].designResult) {
+          try {
+            const retryResult = await generateRoom(updatedRooms[i]);
+            updatedRooms[i] = {
+              ...updatedRooms[i],
+              designResult: retryResult.result,
+              designMessages: [],
+              variations: [],
+            };
+            setState((s) => ({ ...s, rooms: [...updatedRooms] }));
+          } catch {
+            // Still failed after retry — leave as null
+          }
+        }
       }
 
       const firstCompleted = updatedRooms.find((r) => r.designResult);

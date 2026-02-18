@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
-import { CLAUDE_MODEL, CLAUDE_FAST_MODEL, DALLE_MODEL } from "@/app/config/models";
+import { CLAUDE_FAST_MODEL, DALLE_MODEL } from "@/app/config/models";
 import type { StyleProfile } from "@/app/types";
 
 function getAnthropicClient() {
@@ -16,7 +16,7 @@ function getOpenAIClient() {
   return new OpenAI({ apiKey: key });
 }
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 export async function POST(request: NextRequest) {
   const anthropic = getAnthropicClient();
@@ -117,7 +117,7 @@ Keep it under 300 words. Include specific materials, colors, lighting, and camer
 
     // Generate Korean description with Claude
     const descriptionResponse = await anthropic.messages.create({
-      model: CLAUDE_MODEL,
+      model: CLAUDE_FAST_MODEL,
       max_tokens: 1000,
       messages: [
         {
