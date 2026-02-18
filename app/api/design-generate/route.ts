@@ -37,12 +37,21 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { prompt, styleProfile, refinements, previousDescription } = body as {
+    const { prompt, styleProfile, refinements, previousDescription, viewType } = body as {
       prompt: string;
       styleProfile: StyleProfile;
       refinements?: string[];
       previousDescription?: string;
+      viewType?: "rendering" | "isometric" | "floorplan";
     };
+
+    const vt = viewType ?? "rendering";
+    const viewTypeInstruction: Record<string, string> = {
+      rendering: 'Start with "Photorealistic interior design rendering of..."',
+      isometric: 'Start with "Isometric 3D cutaway view of..." — a bird\'s-eye diagonal view looking down into the room with the ceiling removed, showing the full layout in an isometric perspective.',
+      floorplan: 'Start with "Architectural floor plan, top-down 2D blueprint of..." — a clean top-down view showing walls, doors, windows, and furniture placement in a blueprint style.',
+    };
+    const startInstruction = viewTypeInstruction[vt];
 
     if (!prompt?.trim()) {
       return NextResponse.json(
@@ -73,12 +82,11 @@ Materials: ${styleProfile.materials.join(", ")}
 
 CRITICAL: The DALL-E prompt you write MUST explicitly describe the changes the user requested. For example, if the user asked for green walls, the prompt MUST mention green walls. Keep everything else from the existing design the same.
 
-Write ONLY the DALL-E prompt (no explanation). Start with "Photorealistic interior design rendering of..."
+Write ONLY the DALL-E prompt (no explanation). ${startInstruction}
 Keep it under 300 words. Include specific materials, colors, lighting, and camera angle.`
       : `You are an expert at writing DALL-E 3 prompts for interior design images.
 
 Convert this Korean room description and style profile into a detailed English prompt for DALL-E 3.
-The prompt should produce a photorealistic interior design rendering.
 
 Room description: ${prompt}
 
@@ -89,7 +97,7 @@ Style profile:
 - Materials: ${styleProfile.materials.join(", ")}
 - Keywords: ${styleProfile.keywords.join(", ")}
 
-Write ONLY the DALL-E prompt (no explanation). Start with "Photorealistic interior design rendering of..."
+Write ONLY the DALL-E prompt (no explanation). ${startInstruction}
 Keep it under 300 words. Include specific materials, colors, lighting, and camera angle.`;
 
     const dallePromptResponse = await anthropic.messages.create({

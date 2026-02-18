@@ -1,3 +1,7 @@
+// ─── View Types ─────────────────────────────────────────────────────────────
+
+export type ViewType = "rendering" | "isometric" | "floorplan";
+
 // ─── Style Analysis ─────────────────────────────────────────────────────────
 
 export interface StyleProfile {
@@ -76,6 +80,7 @@ export interface AppState {
   styleText: string;
   styleProfile: StyleProfile | null;
   // Step 2
+  viewType: ViewType;
   designPrompt: string;
   // Step 3
   designResult: DesignResult | null;

@@ -16,6 +16,7 @@ import type {
   DesignMessage,
   Material,
   EstimateRow,
+  ViewType,
 } from "@/app/types";
 
 // ─── localStorage keys ──────────────────────────────────────────────────────
@@ -59,6 +60,7 @@ function defaultState(): AppState {
     uploadedImages: [],
     styleText: "",
     styleProfile: null,
+    viewType: "rendering" as ViewType,
     designPrompt: "",
     designResult: null,
     designMessages: [],
@@ -142,6 +144,7 @@ export default function Home() {
         body: JSON.stringify({
           prompt: state.designPrompt,
           styleProfile: state.styleProfile,
+          viewType: state.viewType,
         }),
       });
       const data = await res.json();
@@ -157,7 +160,7 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, [state.designPrompt, state.styleProfile]);
+  }, [state.designPrompt, state.styleProfile, state.viewType]);
 
   // ─── Step 3b: Design Refinement ──────────────────────────────────────────
 
@@ -192,6 +195,7 @@ export default function Home() {
             styleProfile: state.styleProfile,
             refinements: allRefinements,
             previousDescription: state.designResult.description,
+            viewType: state.viewType,
           }),
         });
         const data = await res.json();
@@ -220,7 +224,7 @@ export default function Home() {
         setRefining(false);
       }
     },
-    [state.designPrompt, state.styleProfile, state.designResult, state.designMessages],
+    [state.designPrompt, state.styleProfile, state.designResult, state.designMessages, state.viewType],
   );
 
   // ─── Step 4: Materials Extraction ─────────────────────────────────────────
@@ -367,8 +371,12 @@ export default function Home() {
                 <DesignPrompt
                   prompt={state.designPrompt}
                   styleProfile={state.styleProfile}
+                  viewType={state.viewType}
                   onPromptChange={(prompt) =>
                     setState((s) => ({ ...s, designPrompt: prompt }))
+                  }
+                  onViewTypeChange={(viewType) =>
+                    setState((s) => ({ ...s, viewType }))
                   }
                   onGenerate={handleGenerateDesign}
                   loading={loading}
