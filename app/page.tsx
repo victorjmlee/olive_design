@@ -371,12 +371,8 @@ export default function Home() {
                 <DesignPrompt
                   prompt={state.designPrompt}
                   styleProfile={state.styleProfile}
-                  viewType={state.viewType}
                   onPromptChange={(prompt) =>
                     setState((s) => ({ ...s, designPrompt: prompt }))
-                  }
-                  onViewTypeChange={(viewType) =>
-                    setState((s) => ({ ...s, viewType }))
                   }
                   onGenerate={handleGenerateDesign}
                   loading={loading}
@@ -390,6 +386,11 @@ export default function Home() {
         {state.step === 3 && state.designResult && (
           <DesignResultView
             result={state.designResult}
+            viewType={state.viewType}
+            onViewTypeChange={(viewType) =>
+              setState((s) => ({ ...s, viewType }))
+            }
+            onRegenerate={handleGenerateDesign}
             onRefine={handleRefineDesign}
             onExtractMaterials={handleExtractMaterials}
             loading={loading}

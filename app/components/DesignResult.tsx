@@ -4,10 +4,20 @@ import { useState, useRef, useEffect } from "react";
 import type {
   DesignResult as DesignResultType,
   DesignMessage,
+  ViewType,
 } from "@/app/types";
+
+const VIEW_TYPE_OPTIONS: { value: ViewType; label: string; desc: string }[] = [
+  { value: "rendering", label: "실내 렌더링", desc: "사실적 이미지" },
+  { value: "isometric", label: "3D 조감도", desc: "입체 뷰" },
+  { value: "floorplan", label: "평면도", desc: "2D 배치도" },
+];
 
 interface Props {
   result: DesignResultType;
+  viewType: ViewType;
+  onViewTypeChange: (vt: ViewType) => void;
+  onRegenerate: () => void;
   onRefine: (feedback: string) => void;
   onExtractMaterials: () => void;
   loading: boolean;
@@ -17,6 +27,9 @@ interface Props {
 
 export default function DesignResult({
   result,
+  viewType,
+  onViewTypeChange,
+  onRegenerate,
   onRefine,
   onExtractMaterials,
   loading,
@@ -61,6 +74,31 @@ export default function DesignResult({
               alt="AI 생성 인테리어 디자인"
               className="w-full"
             />
+          </div>
+
+          {/* View type selector */}
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <label className="text-sm font-medium text-gray-600 mb-2 block">다른 시각화로 보기</label>
+            <div className="flex gap-2">
+              {VIEW_TYPE_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => {
+                    onViewTypeChange(opt.value);
+                    if (opt.value !== viewType) onRegenerate();
+                  }}
+                  disabled={loading || refining}
+                  className={`flex-1 px-3 py-2 rounded-lg border text-sm text-center transition-colors disabled:opacity-50 ${
+                    viewType === opt.value
+                      ? "border-[var(--olive-500)] bg-[var(--olive-50)] text-[var(--olive-800)] font-semibold"
+                      : "border-gray-200 text-gray-600 hover:border-[var(--olive-300)] hover:bg-[var(--olive-50)]"
+                  }`}
+                >
+                  <div>{opt.label}</div>
+                  <div className="text-xs text-gray-400 mt-0.5">{opt.desc}</div>
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="bg-white rounded-xl border border-gray-200 p-5">
